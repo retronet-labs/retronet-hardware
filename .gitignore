@@ -1,0 +1,27 @@
+# File di workspace per lo sviluppo locale multi-repo (vedi CONTRIBUTING.md).
+# Non versionato: punta a un percorso sibling specifico della macchina.
+go.work
+go.work.sum
+
+# Binari ed eseguibili
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Output e profili dei test
+*.test
+*.out
+coverage.*
+
+# Dipendenze
+/vendor/
+
+# Editor / IDE / sistema operativo
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

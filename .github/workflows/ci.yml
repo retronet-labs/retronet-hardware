@@ -1,0 +1,55 @@
+name: CI
+
+# Nota: questo workflow esegue il checkout anche di retronet-logic e crea un
+# go.work al volo, così la CI funziona senza dover pubblicare una versione di
+# retronet-logic. Richiede che il repository retronet-labs/retronet-logic sia
+# accessibile (pubblico).
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    name: Build, vet e test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout retronet-hardware
+        uses: actions/checkout@v4
+        with:
+          path: retronet-hardware
+
+      - name: Checkout retronet-logic
+        uses: actions/checkout@v4
+        with:
+          repository: retronet-labs/retronet-logic
+          path: retronet-logic
+
+      - name: Configura Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          check-latest: true
+
+      - name: Crea workspace Go
+        working-directory: retronet-hardware
+        run: go work init . ../retronet-logic
+
+      - name: Verifica formattazione (gofmt)
+        working-directory: retronet-hardware
+        run: |
+          non_formattati="$(gofmt -l .)"
+          if [ -n "$non_formattati" ]; then
+            echo "File non formattati:"
+            echo "$non_formattati"
+            exit 1
+          fi
+
+      - name: Analisi statica (go vet)
+        working-directory: retronet-hardware
+        run: go vet ./...
+
+      - name: Test
+        working-directory: retronet-hardware
+        run: go test -v ./...
