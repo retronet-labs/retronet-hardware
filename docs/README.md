@@ -10,6 +10,7 @@ Guide didattiche in italiano ai componenti **sequenziali** costruiti sopra
 | Latch SR | [`latch`](../latch) | [latch.md](latch.md) |
 | D latch e D flip-flop | [`flipflop`](../flipflop) | [flip-flop.md](flip-flop.md) |
 | Registro a N bit | [`register`](../register) | [register.md](register.md) |
+| Bridge ALU 4004/8008 | [`bridge`](../bridge) | [bridge.md](bridge.md) |
 
 ## Percorso di lettura consigliato
 

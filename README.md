@@ -25,6 +25,9 @@ retronet-hardware/
 ├── latch/       # latch SR (prima cella di memoria)
 ├── flipflop/    # D latch, D flip-flop edge-triggered
 ├── register/    # registro a N bit
+├── bridge/      # adattatori ALU verso gli emulatori 4004/8008
+│   ├── i4004/
+│   └── i8008/
 ├── ...          # register file, counter/PC, cpu (in arrivo)
 ├── docs/        # guide didattiche in italiano
 └── examples/    # programmi eseguibili di dimostrazione
