@@ -94,3 +94,16 @@ memoria) e control unit. L'ISA esatto va definito e documentato in `docs/` prima
 di implementare la CPU.
 
 Non introdurre dipendenze esterne non necessarie.
+
+
+## Stato (aggiornato 2026-06-23)
+
+Implementati: `latch` (SR), `flipflop` (D latch + D flip-flop master-slave),
+`register` (N bit con load) e `bridge/` con gli adattatori ALU `i8008` e `i4004`
+verso gli emulatori esistenti, validati da test di conformità esaustivi. Dipende
+da retronet-logic v0.3.0 (via go.work in locale; vedi CLAUDE.md). Nessun push.
+
+**Prossimo passo (pianificato per il 2026-06-24): delega vera** — far sì che gli
+emulatori `go-4004` e `retronet-8008` chiamino i bridge al posto della loro
+aritmetica interna (ricetta in docs/bridge.md). Tocca repo funzionanti: procedere
+solo con via libera dell'utente. Ancora da fare: register file, PC, CPU.
