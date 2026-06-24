@@ -81,6 +81,28 @@ func TestALUConformitaEsaustiva(t *testing.T) {
 	}
 }
 
+// TestIncrementDecrementConformita verifica che Increment/Decrement (INR/DCR)
+// producano value±1 e i flag Zero/Sign/Parity attesi, su tutti i byte.
+func TestIncrementDecrementConformita(t *testing.T) {
+	for v := 0; v <= 0xFF; v++ {
+		gotR, gz, gs, gp := Increment(byte(v))
+		wantR := byte(v + 1)
+		wz, ws, wp := refUpdateZSP(wantR)
+		if gotR != wantR || gz != wz || gs != ws || gp != wp {
+			t.Fatalf("Increment(%#02x) = (%#02x,z=%v,s=%v,p=%v), atteso (%#02x,z=%v,s=%v,p=%v)",
+				v, gotR, gz, gs, gp, wantR, wz, ws, wp)
+		}
+
+		gotR, gz, gs, gp = Decrement(byte(v))
+		wantR = byte(v - 1)
+		wz, ws, wp = refUpdateZSP(wantR)
+		if gotR != wantR || gz != wz || gs != ws || gp != wp {
+			t.Fatalf("Decrement(%#02x) = (%#02x,z=%v,s=%v,p=%v), atteso (%#02x,z=%v,s=%v,p=%v)",
+				v, gotR, gz, gs, gp, wantR, wz, ws, wp)
+		}
+	}
+}
+
 func ExampleALU() {
 	// SUB 50 - 20: nessun prestito (Carry=false nella convenzione 8008).
 	res, f := ALU(GroupSUB, 50, 20, false)

@@ -80,6 +80,22 @@ func ALU(group byte, a, value byte, carryIn bool) (result byte, flags Flags) {
 	}
 }
 
+// Increment esegue value + 1 sulla ALU a porte e restituisce il risultato con i
+// flag Zero/Sign/Parity. Modella l'istruzione INR dell'8008, che aggiorna questi
+// tre flag ma NON tocca il Carry.
+func Increment(value byte) (result byte, zero, sign, parity bool) {
+	out, f := alu.Compute(alu.Add, bus.FromUint(uint64(value), Width), bus.FromUint(1, Width), bit.Zero)
+	return byte(out.Uint()), f.Zero.IsHigh(), f.Sign.IsHigh(), f.Parity.IsHigh()
+}
+
+// Decrement esegue value - 1 sulla ALU a porte e restituisce il risultato con i
+// flag Zero/Sign/Parity. Modella l'istruzione DCR dell'8008, che aggiorna questi
+// tre flag ma NON tocca il Carry.
+func Decrement(value byte) (result byte, zero, sign, parity bool) {
+	out, f := alu.Compute(alu.Sub, bus.FromUint(uint64(value), Width), bus.FromUint(1, Width), bit.One)
+	return byte(out.Uint()), f.Zero.IsHigh(), f.Sign.IsHigh(), f.Parity.IsHigh()
+}
+
 // arith costruisce risultato e flag per le operazioni aritmetiche. Per la
 // sottrazione (isSub) il Carry dell'8008 è il prestito, cioè NOT del carry ALU.
 func arith(out bus.Bus, f alu.Flags, isSub bool) (byte, Flags) {
