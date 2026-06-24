@@ -32,11 +32,13 @@ La CI ricrea il workspace al volo facendo il checkout di entrambi i repo.
   esistenti — `bridge/i8008` e `bridge/i4004` — validati da test di conformità
   esaustivi contro un riferimento fedele agli emulatori.
 
-## Stato e PROSSIMO PASSO
+## Stato
 
-Il bridge ALU è pronto e **conforme** agli emulatori (senza modificarli).
+Il bridge ALU è pronto, conforme e **collegato**: dal 2026-06-24 gli emulatori
+`go-4004` e `retronet-8008` delegano davvero le operazioni ALU ai bridge
+(`i4004`/`i8008`), con le loro intere suite di test verdi. Setup via `go.work`
+locale in ciascun emulatore (vedi [docs/bridge.md](docs/bridge.md)). Tag locale
+`v0.1.0`.
 
-**Prossimo passo (pianificato per il 2026-06-24): delega vera** — far sì che
-`go-4004` e `retronet-8008` chiamino i bridge al posto della loro aritmetica
-interna. Ricetta dettagliata in [docs/bridge.md](docs/bridge.md). Tocca repo
-emulatori funzionanti → procedere solo con via libera esplicito dell'utente.
+Possibili prossimi passi: register file, Program Counter, una mini-CPU; oppure
+estendere la delega ad altre istruzioni (rotazioni, INC/DCR su registro).

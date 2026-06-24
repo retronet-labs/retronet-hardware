@@ -78,6 +78,13 @@ c.A, c.C = i4004.Sub(c.A, c.R[low], c.C)
 
 ## Stato
 
-Per ora gli emulatori restano **intatti**: il bridge è validato in modo
-indipendente. Il passo successivo, quando vorrai, è far sì che 4004 e 8008
-chiamino davvero questi adattatori al posto della loro aritmetica interna.
+**Delega attiva (2026-06-24).** Oltre alla validazione indipendente, gli
+emulatori chiamano davvero questi adattatori:
+
+- `retronet-8008/cpu/alu.go` → `executeALU` usa `i8008.ALU(...)`;
+- `go-4004/cpu/instructions.go` → ADD/SUB/IAC/DAC/CMA usano `i4004.*`.
+
+Ciascun emulatore usa un `go.work` locale (non versionato) con
+`use . ../retronet-hardware ../retronet-logic`. Le suite di test complete dei due
+emulatori restano verdi: il comportamento è invariato, ma l'aritmetica passa ora
+per la ALU costruita dai gate.
