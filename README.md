@@ -22,15 +22,18 @@ costruito con la logica.
 
 ```
 retronet-hardware/
-├── latch/       # latch SR (prima cella di memoria)
-├── flipflop/    # D latch, D flip-flop edge-triggered
-├── register/    # registro a N bit
-├── bridge/      # adattatori ALU verso gli emulatori 4004/8008
+├── latch/        # latch SR (prima cella di memoria)
+├── flipflop/     # D latch, D flip-flop edge-triggered
+├── register/     # registro a N bit
+├── registerfile/ # banco di registri R0-R3
+├── pc/           # Program Counter (registro + incremento + salto)
+├── memory/       # modello di memoria a byte
+├── cpu/          # mini-CPU a 8 bit (datapath + control)
+├── bridge/       # adattatori ALU verso gli emulatori 4004/8008
 │   ├── i4004/
 │   └── i8008/
-├── ...          # register file, counter/PC, cpu (in arrivo)
-├── docs/        # guide didattiche in italiano
-└── examples/    # programmi eseguibili di dimostrazione
+├── docs/         # guide didattiche in italiano
+└── examples/     # programmi eseguibili di dimostrazione
 ```
 
 ## Modello di simulazione
