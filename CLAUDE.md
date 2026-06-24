@@ -3,20 +3,22 @@
 Simulazione Go **didattica** della logica sequenziale, costruita sopra
 RetroNet Logic. Architettura e modello stato/clock sono in [AGENTS.md](AGENTS.md).
 
-## ⚠️ Setup di sviluppo (leggere prima di tutto)
+## Setup di sviluppo
 
-Questo repo dipende da `retronet-logic`. In locale serve un file `go.work`
-(**non** versionato) che punta al checkout sibling:
+Questo repo dipende da `retronet-logic`, **pubblicato** su GitHub: con `go.sum`
+presente, un clone pulito compila e testa subito (`go build`/`go test`), perché
+`retronet-logic v0.3.0` si risolve da GitHub.
+
+Per **co-sviluppare** logic e hardware insieme (modifiche locali a entrambi) usa
+un `go.work` (non versionato) che punta al checkout sibling:
 
 ```sh
 # in C:\work\source\retronet-hardware
 go work init . ../retronet-logic
 ```
 
-Senza `go.work` la build fallisce: il `go.mod` richiede `retronet-logic v0.3.0`,
-non pubblicato. (`go list -m all` può lamentarsi della versione anche con go.work
-attivo: `go build`/`go test` invece risolvono correttamente dal sorgente locale.)
-La CI ricrea il workspace al volo facendo il checkout di entrambi i repo.
+Con go.work attivo, `go list -m all` può lamentarsi della versione: `go build`/
+`go test` invece risolvono correttamente dal sorgente locale.
 
 ## Comandi
 
