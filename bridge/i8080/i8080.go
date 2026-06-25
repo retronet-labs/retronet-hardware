@@ -52,7 +52,7 @@ func ALU(group byte, a, value byte, carryIn bool) (result byte, flags Flags) {
 		return arith(out, f, auxSub(a, value, carryIn), true)
 	case GroupANA:
 		out, f := alu.Compute(alu.And, av, bv, bit.Zero)
-		return logic(out, f, true)
+		return logic(out, f, auxAnd(a, value))
 	case GroupXRA:
 		out, f := alu.Compute(alu.Xor, av, bv, bit.Zero)
 		return logic(out, f, false)
@@ -117,6 +117,13 @@ func auxAdd(a, value byte, carryIn bool) bool {
 func auxSub(a, value byte, borrowIn bool) bool {
 	_, f := alu.Compute(alu.Sub, lowNibble(a), lowNibble(value), bit.FromBool(!borrowIn))
 	return !f.Carry.IsHigh()
+}
+
+// auxAnd calcola l'Auxiliary Carry dell'istruzione ANA dell'8080: per quirk
+// dell'hardware è il bit 3 di (A OR value), calcolato qui con la OR a gate.
+func auxAnd(a, value byte) bool {
+	out, _ := alu.Compute(alu.Or, bus.FromUint(uint64(a), Width), bus.FromUint(uint64(value), Width), bit.Zero)
+	return out[3].IsHigh()
 }
 
 func lowNibble(v byte) bus.Bus {

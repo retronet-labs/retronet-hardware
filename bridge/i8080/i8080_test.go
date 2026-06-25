@@ -28,6 +28,24 @@ func TestLogicalFlagsMatch8080Convention(t *testing.T) {
 	}
 }
 
+func TestAnaAuxiliaryCarry(t *testing.T) {
+	// Quirk 8080: l'AC di ANA è il bit 3 di (A OR value).
+	casi := []struct {
+		a, v   byte
+		wantAC bool
+	}{
+		{0xF0, 0x0F, true},  // A|v = 0xFF -> bit3 = 1
+		{0x00, 0x00, false}, // A|v = 0x00 -> bit3 = 0
+		{0x08, 0x00, true},  // A|v = 0x08 -> bit3 = 1
+		{0x04, 0x02, false}, // A|v = 0x06 -> bit3 = 0
+	}
+	for _, c := range casi {
+		if _, flags := ALU(GroupANA, c.a, c.v, false); flags.AuxiliaryCarry != c.wantAC {
+			t.Errorf("ANA(0x%02X,0x%02X): AC=%v, atteso %v", c.a, c.v, flags.AuxiliaryCarry, c.wantAC)
+		}
+	}
+}
+
 func TestAdd16CascadesCarry(t *testing.T) {
 	result, carry := Add16(0xFFFF, 0x0001)
 	if result != 0x0000 || !carry {
