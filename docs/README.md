@@ -13,6 +13,7 @@ Guide didattiche in italiano ai componenti **sequenziali** costruiti sopra
 | Register file | [`registerfile`](../registerfile) | [register-file.md](register-file.md) |
 | Program Counter | [`pc`](../pc) | [program-counter.md](program-counter.md) |
 | Mini-CPU | [`cpu`](../cpu) | [mini-cpu.md](mini-cpu.md) · [ISA](cpu-isa.md) |
+| Mini-assembler | [`miniasm`](../miniasm) | [miniasm.md](miniasm.md) |
 | Bridge ALU 4004/8008 | [`bridge`](../bridge) | [bridge.md](bridge.md) |
 
 ## Percorso di lettura consigliato
