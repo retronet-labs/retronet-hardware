@@ -10,6 +10,7 @@
 package cpu
 
 import (
+	"github.com/retronet-labs/retronet-logic/adder"
 	"github.com/retronet-labs/retronet-logic/alu"
 	"github.com/retronet-labs/retronet-logic/bit"
 	"github.com/retronet-labs/retronet-logic/bus"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/retronet-labs/retronet-hardware/memory"
 	"github.com/retronet-labs/retronet-hardware/pc"
+	"github.com/retronet-labs/retronet-hardware/register"
 	"github.com/retronet-labs/retronet-hardware/registerfile"
 )
 
@@ -39,13 +41,25 @@ const (
 	opJC  = 0xB
 	opSHL = 0xC
 	opSHR = 0xD
+	opSYS = 0xE // gruppo "control": il nibble basso seleziona la sotto-operazione
 	opHLT = 0xF
 )
+
+// Sotto-operazioni del gruppo SYS (nibble basso dell'opcode).
+const (
+	sysRET  = 0x0 // RET: ritorno da subroutine
+	sysCALL = 0x1 // CALL addr: chiamata a subroutine
+)
+
+// stackTop è il valore iniziale dello stack pointer: la pila cresce verso il
+// basso a partire dalla cima della memoria.
+const stackTop = 0xFF
 
 // CPU è lo stato della mini-CPU.
 type CPU struct {
 	regs *registerfile.File
 	pc   *pc.PC
+	sp   *register.Register // stack pointer (pila in memoria, cresce verso il basso)
 	mem  *memory.RAM
 
 	// Registro di stato, modellato come campi: i flag prodotti dall'ALU.
@@ -58,11 +72,14 @@ type CPU struct {
 
 // New crea una mini-CPU con 4 registri da 8 bit collegata alla memoria mem.
 func New(mem *memory.RAM) *CPU {
-	return &CPU{
+	c := &CPU{
 		regs: registerfile.New(4, Width),
 		pc:   pc.New(Width),
+		sp:   register.New(Width),
 		mem:  mem,
 	}
+	c.writeSP(byteBus(stackTop)) // SP inizializzato in cima alla memoria
+	return c
 }
 
 // Reg restituisce il contenuto del registro i (0-3).
@@ -124,6 +141,13 @@ func (c *CPU) Step() {
 		c.shiftOp(rd, true)
 	case opSHR:
 		c.shiftOp(rd, false)
+	case opSYS:
+		switch opcode & 0x0F {
+		case sysRET:
+			c.ret()
+		case sysCALL:
+			c.call(c.fetch())
+		}
 	case opHLT:
 		c.Halted = true
 	}
@@ -161,6 +185,43 @@ func (c *CPU) shiftOp(rd int, left bool) {
 func (c *CPU) jump(addr byte) {
 	c.tickPC(byteBus(addr), bit.One, bit.Zero)
 }
+
+// call salva l'indirizzo di ritorno (il PC punta già all'istruzione successiva,
+// avendo consumato l'operando) sulla pila e salta ad addr.
+func (c *CPU) call(addr byte) {
+	c.push(c.PC())
+	c.jump(addr)
+}
+
+// ret riprende l'esecuzione dall'indirizzo in cima alla pila.
+func (c *CPU) ret() {
+	c.jump(c.pop())
+}
+
+// push scrive v in cima alla pila e decrementa SP (la pila cresce verso il
+// basso). SP-1 è calcolato con l'adder a gate (somma di 0xFF).
+func (c *CPU) push(v byte) {
+	c.mem.Write(c.SP(), v)
+	dec, _ := adder.Add(c.sp.Value(), byteBus(0xFF), bit.Zero)
+	c.writeSP(dec)
+}
+
+// pop incrementa SP e restituisce il valore in cima alla pila. SP+1 passa per
+// l'adder a gate.
+func (c *CPU) pop() byte {
+	inc, _ := adder.Add(c.sp.Value(), byteBus(1), bit.Zero)
+	c.writeSP(inc)
+	return c.mem.Read(c.SP())
+}
+
+// writeSP aggiorna lo stack pointer con un ciclo di clock completo.
+func (c *CPU) writeSP(v bus.Bus) {
+	c.sp.Step(v, bit.One, bit.Zero)
+	c.sp.Step(v, bit.One, bit.One)
+}
+
+// SP restituisce il valore corrente dello stack pointer.
+func (c *CPU) SP() byte { return byte(c.sp.Value().Uint()) }
 
 // writeReg scrive data nel registro sel applicando un ciclo di clock completo.
 func (c *CPU) writeReg(sel int, data bus.Bus) {

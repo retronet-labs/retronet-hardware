@@ -82,6 +82,25 @@ func TestJMPSaltaIstruzione(t *testing.T) {
 	}
 }
 
+func TestCallRet(t *testing.T) {
+	c, m := newCPU([]byte{
+		0x10, 0x00, // 0x00 LDI R0, 0
+		0xE1, 0x08, // 0x02 CALL 0x08
+		0x80, 0x20, // 0x04 ST R0, 0x20
+		0xF0,       // 0x06 HLT
+		0x00,       // 0x07 (padding)
+		0x10, 0x2A, // 0x08 LDI R0, 42   (subroutine)
+		0xE0, // 0x0A RET
+	})
+	c.Run(100)
+	if got := m.Read(0x20); got != 42 {
+		t.Errorf("mem[0x20]=%d, atteso 42 (CALL deve eseguire la subroutine e RET tornare)", got)
+	}
+	if c.SP() != 0xFF {
+		t.Errorf("SP=%#x, atteso 0xFF (pila ripristinata dopo RET)", c.SP())
+	}
+}
+
 func TestSHLeSHR(t *testing.T) {
 	// SHL: 0x81 << 1 = 0x02, carry = vecchio MSB = 1.
 	c, _ := newCPU([]byte{

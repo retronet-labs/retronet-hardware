@@ -45,7 +45,20 @@ usati valgono 0.
 | `0xB` | `JC  addr`    | 2 | se `C`: `PC = addr` | — |
 | `0xC` | `SHL Rd`      | 1 | `Rd <<= 1` (entra 0 nel LSB) | Z, C=bit uscito |
 | `0xD` | `SHR Rd`      | 1 | `Rd >>= 1` (entra 0 nel MSB) | Z, C=bit uscito |
+| `0xE1`| `CALL addr`   | 2 | salva il ritorno sulla pila, poi `PC = addr` | — |
+| `0xE0`| `RET`         | 1 | `PC = pop()` (ritorno da subroutine) | — |
 | `0xF` | `HLT`         | 1 | ferma la CPU | — |
+
+`CALL`/`RET` usano l'opcode di gruppo `0xE` ("control"): il nibble basso
+seleziona la sotto-operazione (`0` = RET, `1` = CALL).
+
+## Pila e subroutine
+
+La CPU ha uno **stack pointer** `SP` a 8 bit; la pila vive **in memoria** e
+cresce verso il basso da `0xFF` (valore iniziale di `SP`). `CALL` salva
+l'indirizzo di ritorno con `push`, `RET` lo recupera con `pop`; le subroutine si
+possono **annidare** fin dove arriva la memoria. Gli aggiornamenti `SP±1` passano
+per l'adder a gate. Attenzione a non far collidere la pila con dati/programma.
 
 `SHL`/`SHR` usano lo shifter a gate di RetroNet Logic; il bit che esce
 dall'estremità finisce nel flag `Carry`.
