@@ -76,6 +76,29 @@ func TestUnarieConformita(t *testing.T) {
 	}
 }
 
+// TestRotazioniConformita confronta RAL/RAR con la semantica dell'emulatore 4004
+// (nibble, attraverso il carry) su tutti i valori.
+func TestRotazioniConformita(t *testing.T) {
+	for v := 0; v <= 0x0F; v++ {
+		for _, cin := range []bool{false, true} {
+			ci := 0
+			if cin {
+				ci = 1
+			}
+			if gotR, gotC := RotateLeftThroughCarry(byte(v), cin); gotR != byte(((v<<1)|ci)&0x0F) || gotC != (v&0x08 != 0) {
+				t.Fatalf("RAL(%d,%v) = %d,c=%v", v, cin, gotR, gotC)
+			}
+			cm := 0
+			if cin {
+				cm = 0x08
+			}
+			if gotR, gotC := RotateRightThroughCarry(byte(v), cin); gotR != byte(((v>>1)|cm)&0x0F) || gotC != (v&0x01 != 0) {
+				t.Fatalf("RAR(%d,%v) = %d,c=%v", v, cin, gotR, gotC)
+			}
+		}
+	}
+}
+
 func ExampleSub() {
 	// 9 - 5 = 4, nessun prestito (carry = true nella convenzione 4004).
 	res, carry := Sub(9, 5, true)

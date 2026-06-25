@@ -13,6 +13,7 @@ import (
 	"github.com/retronet-labs/retronet-logic/alu"
 	"github.com/retronet-labs/retronet-logic/bit"
 	"github.com/retronet-labs/retronet-logic/bus"
+	"github.com/retronet-labs/retronet-logic/shifter"
 
 	"github.com/retronet-labs/retronet-hardware/memory"
 	"github.com/retronet-labs/retronet-hardware/pc"
@@ -36,6 +37,8 @@ const (
 	opJMP = 0x9
 	opJZ  = 0xA
 	opJC  = 0xB
+	opSHL = 0xC
+	opSHR = 0xD
 	opHLT = 0xF
 )
 
@@ -117,6 +120,10 @@ func (c *CPU) Step() {
 		if c.Carry {
 			c.jump(addr)
 		}
+	case opSHL:
+		c.shiftOp(rd, true)
+	case opSHR:
+		c.shiftOp(rd, false)
 	case opHLT:
 		c.Halted = true
 	}
@@ -136,6 +143,18 @@ func (c *CPU) aluOp(op alu.Op, rd, rs int, cin bit.Bit) {
 	c.writeReg(rd, out)
 	c.Zero = flags.Zero.IsHigh()
 	c.Carry = flags.Carry.IsHigh()
+}
+
+// shiftOp scorre Rd di una posizione (a sinistra o a destra) usando lo shifter a
+// gate, riscrive Rd e aggiorna i flag: Carry = bit uscito, Zero = risultato nullo.
+func (c *CPU) shiftOp(rd int, left bool) {
+	out, carry := shifter.ShiftRight(c.regs.Read(rd))
+	if left {
+		out, carry = shifter.ShiftLeft(c.regs.Read(rd))
+	}
+	c.writeReg(rd, out)
+	c.Carry = carry.IsHigh()
+	c.Zero = out.Uint() == 0
 }
 
 // jump carica un nuovo indirizzo nel PC.

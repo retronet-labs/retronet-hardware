@@ -43,7 +43,12 @@ usati valgono 0.
 | `0x9` | `JMP addr`    | 2 | `PC = addr` | — |
 | `0xA` | `JZ  addr`    | 2 | se `Z`: `PC = addr` | — |
 | `0xB` | `JC  addr`    | 2 | se `C`: `PC = addr` | — |
+| `0xC` | `SHL Rd`      | 1 | `Rd <<= 1` (entra 0 nel LSB) | Z, C=bit uscito |
+| `0xD` | `SHR Rd`      | 1 | `Rd >>= 1` (entra 0 nel MSB) | Z, C=bit uscito |
 | `0xF` | `HLT`         | 1 | ferma la CPU | — |
+
+`SHL`/`SHR` usano lo shifter a gate di RetroNet Logic; il bit che esce
+dall'estremità finisce nel flag `Carry`.
 
 Convenzione del Carry (quella nativa dell'ALU): per `ADD` è il riporto uscente;
 per `SUB`, `C = 1` significa **nessun prestito** (`Rd >= Rs`).

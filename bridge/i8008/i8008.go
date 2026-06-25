@@ -15,6 +15,7 @@ import (
 	"github.com/retronet-labs/retronet-logic/alu"
 	"github.com/retronet-labs/retronet-logic/bit"
 	"github.com/retronet-labs/retronet-logic/bus"
+	"github.com/retronet-labs/retronet-logic/shifter"
 )
 
 // Width è la larghezza dei dati dell'8008.
@@ -94,6 +95,32 @@ func Increment(value byte) (result byte, zero, sign, parity bool) {
 func Decrement(value byte) (result byte, zero, sign, parity bool) {
 	out, f := alu.Compute(alu.Sub, bus.FromUint(uint64(value), Width), bus.FromUint(1, Width), bit.One)
 	return byte(out.Uint()), f.Zero.IsHigh(), f.Sign.IsHigh(), f.Parity.IsHigh()
+}
+
+// Le rotazioni dell'8008 toccano solo il Carry (non Zero/Sign/Parity).
+
+// RotateLeftCircular esegue RLC: il MSB rientra nel LSB e diventa il nuovo Carry.
+func RotateLeftCircular(value byte) (result byte, carry bool) {
+	out, c := shifter.RotateLeft(bus.FromUint(uint64(value), Width))
+	return byte(out.Uint()), c.IsHigh()
+}
+
+// RotateRightCircular esegue RRC: il LSB rientra nel MSB e diventa il nuovo Carry.
+func RotateRightCircular(value byte) (result byte, carry bool) {
+	out, c := shifter.RotateRight(bus.FromUint(uint64(value), Width))
+	return byte(out.Uint()), c.IsHigh()
+}
+
+// RotateLeftThroughCarry esegue RAL: il Carry entra nel LSB, il MSB diventa Carry.
+func RotateLeftThroughCarry(value byte, carryIn bool) (result byte, carry bool) {
+	out, c := shifter.RotateLeftThroughCarry(bus.FromUint(uint64(value), Width), bit.FromBool(carryIn))
+	return byte(out.Uint()), c.IsHigh()
+}
+
+// RotateRightThroughCarry esegue RAR: il Carry entra nel MSB, il LSB diventa Carry.
+func RotateRightThroughCarry(value byte, carryIn bool) (result byte, carry bool) {
+	out, c := shifter.RotateRightThroughCarry(bus.FromUint(uint64(value), Width), bit.FromBool(carryIn))
+	return byte(out.Uint()), c.IsHigh()
 }
 
 // arith costruisce risultato e flag per le operazioni aritmetiche. Per la

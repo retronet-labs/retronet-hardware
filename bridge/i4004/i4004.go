@@ -14,6 +14,7 @@ import (
 	"github.com/retronet-labs/retronet-logic/alu"
 	"github.com/retronet-labs/retronet-logic/bit"
 	"github.com/retronet-labs/retronet-logic/bus"
+	"github.com/retronet-labs/retronet-logic/shifter"
 )
 
 // Width è la larghezza dei dati del 4004 (nibble).
@@ -54,4 +55,18 @@ func Dec(a byte) (result byte, carry bool) {
 func Complement(a byte) (result byte) {
 	out, _ := alu.Compute(alu.Not, nib(a), nib(0), bit.Zero)
 	return byte(out.Uint())
+}
+
+// RotateLeftThroughCarry esegue RAL: ruota a sinistra facendo passare il carry.
+// Restituisce il nibble risultante e il nuovo carry (vecchio MSB).
+func RotateLeftThroughCarry(a byte, carryIn bool) (result byte, carry bool) {
+	out, c := shifter.RotateLeftThroughCarry(nib(a), bit.FromBool(carryIn))
+	return byte(out.Uint()), c.IsHigh()
+}
+
+// RotateRightThroughCarry esegue RAR: ruota a destra facendo passare il carry.
+// Restituisce il nibble risultante e il nuovo carry (vecchio LSB).
+func RotateRightThroughCarry(a byte, carryIn bool) (result byte, carry bool) {
+	out, c := shifter.RotateRightThroughCarry(nib(a), bit.FromBool(carryIn))
+	return byte(out.Uint()), c.IsHigh()
 }

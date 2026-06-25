@@ -82,6 +82,30 @@ func TestJMPSaltaIstruzione(t *testing.T) {
 	}
 }
 
+func TestSHLeSHR(t *testing.T) {
+	// SHL: 0x81 << 1 = 0x02, carry = vecchio MSB = 1.
+	c, _ := newCPU([]byte{
+		0x10, 0x81, // LDI R0, 0x81
+		0xC0, // SHL R0
+		0xF0,
+	})
+	c.Run(10)
+	if c.Reg(0) != 0x02 || !c.Carry {
+		t.Errorf("SHL: R0=%#x carry=%v, attesi 0x02 true", c.Reg(0), c.Carry)
+	}
+
+	// SHR: 0x01 >> 1 = 0x00, carry = vecchio LSB = 1, zero = 1.
+	c, _ = newCPU([]byte{
+		0x10, 0x01, // LDI R0, 1
+		0xD0, // SHR R0
+		0xF0,
+	})
+	c.Run(10)
+	if c.Reg(0) != 0x00 || !c.Carry || !c.Zero {
+		t.Errorf("SHR: R0=%#x carry=%v zero=%v, attesi 0 true true", c.Reg(0), c.Carry, c.Zero)
+	}
+}
+
 // Programma completo (vedi docs/cpu-isa.md): somma 1+2+3+4+5 = 15 in mem[0x20].
 func TestProgrammaSomma(t *testing.T) {
 	prog := []byte{

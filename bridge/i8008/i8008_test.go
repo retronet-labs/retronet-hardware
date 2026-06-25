@@ -103,6 +103,38 @@ func TestIncrementDecrementConformita(t *testing.T) {
 	}
 }
 
+// TestRotazioniConformita confronta le rotazioni (RLC/RRC/RAL/RAR) con la
+// semantica dell'emulatore 8008 (cpu/rotate.go) su tutti i byte.
+func TestRotazioniConformita(t *testing.T) {
+	for v := 0; v <= 0xFF; v++ {
+		b := byte(v)
+
+		if gotR, gotC := RotateLeftCircular(b); gotR != byte((v<<1)|(v>>7)) || gotC != (v&0x80 != 0) {
+			t.Fatalf("RLC(%#02x) = %#02x,c=%v", v, gotR, gotC)
+		}
+		if gotR, gotC := RotateRightCircular(b); gotR != byte((v>>1)|(v<<7)) || gotC != (v&0x01 != 0) {
+			t.Fatalf("RRC(%#02x) = %#02x,c=%v", v, gotR, gotC)
+		}
+
+		for _, cin := range []bool{false, true} {
+			ci := 0
+			if cin {
+				ci = 1
+			}
+			if gotR, gotC := RotateLeftThroughCarry(b, cin); gotR != byte((v<<1)|ci) || gotC != (v&0x80 != 0) {
+				t.Fatalf("RAL(%#02x,%v) = %#02x,c=%v", v, cin, gotR, gotC)
+			}
+			cm := 0
+			if cin {
+				cm = 0x80
+			}
+			if gotR, gotC := RotateRightThroughCarry(b, cin); gotR != byte((v>>1)|cm) || gotC != (v&0x01 != 0) {
+				t.Fatalf("RAR(%#02x,%v) = %#02x,c=%v", v, cin, gotR, gotC)
+			}
+		}
+	}
+}
+
 func ExampleALU() {
 	// SUB 50 - 20: nessun prestito (Carry=false nella convenzione 8008).
 	res, f := ALU(GroupSUB, 50, 20, false)
