@@ -114,9 +114,12 @@ func auxAdd(a, value byte, carryIn bool) bool {
 	return f.Carry.IsHigh()
 }
 
+// auxSub calcola l'Auxiliary Carry (half-borrow) di SUB/SBB/CMP. Sull'8080 è il
+// carry-out del bit 3 dell'addizione equivalente a + NOT(value) + (!borrowIn),
+// senza negazione (a differenza del Carry pieno, che invece è il prestito).
 func auxSub(a, value byte, borrowIn bool) bool {
 	_, f := alu.Compute(alu.Sub, lowNibble(a), lowNibble(value), bit.FromBool(!borrowIn))
-	return !f.Carry.IsHigh()
+	return f.Carry.IsHigh()
 }
 
 // auxAnd calcola l'Auxiliary Carry dell'istruzione ANA dell'8080: per quirk
