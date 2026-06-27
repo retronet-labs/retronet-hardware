@@ -287,6 +287,104 @@ func TestDivDifferential(t *testing.T) {
 	}
 }
 
+// --- Shift/rotate (composti dallo shifter a gate) vs oracolo Go ---
+
+func refShift(op byte, value uint16, count byte, width int, carryIn bool) (uint16, ShiftFlags, bool) {
+	mask := uint32(1)<<uint(width) - 1
+	v := uint32(value) & mask
+	cf := carryIn
+	o := op & 0x07
+	for i := byte(0); i < count; i++ {
+		switch o {
+		case ShiftROL:
+			top := v >> uint(width-1) & 1
+			v = (v<<1 | top) & mask
+			cf = top == 1
+		case ShiftROR:
+			bot := v & 1
+			v = v>>1 | bot<<uint(width-1)
+			cf = bot == 1
+		case ShiftRCL:
+			top := v >> uint(width-1) & 1
+			ci := b2i(cf)
+			v = (v<<1 | ci) & mask
+			cf = top == 1
+		case ShiftRCR:
+			bot := v & 1
+			ci := b2i(cf)
+			v = v>>1 | ci<<uint(width-1)
+			cf = bot == 1
+		case ShiftSHR:
+			cf = v&1 == 1
+			v >>= 1
+		case ShiftSAR:
+			cf = v&1 == 1
+			v = v>>1 | (v>>uint(width-1)&1)<<uint(width-1)
+		default: // SHL e alias 6
+			cf = v>>uint(width-1)&1 == 1
+			v = v << 1 & mask
+		}
+	}
+	res := uint16(v)
+	f := ShiftFlags{
+		Carry:  cf,
+		Sign:   res>>uint(width-1)&1 == 1,
+		Zero:   uint32(res)&mask == 0,
+		Parity: refParityEven(uint32(res)),
+	}
+	resMSB := f.Sign
+	switch o {
+	case ShiftSHL, 6, ShiftROL, ShiftRCL:
+		f.Overflow = resMSB != cf
+	case ShiftSHR:
+		f.Overflow = value>>uint(width-1)&1 == 1
+	case ShiftSAR:
+		f.Overflow = false
+	default: // ROR, RCR
+		f.Overflow = resMSB != (res>>uint(width-2)&1 == 1)
+	}
+	return res, f, o <= ShiftRCR
+}
+
+func b2i(v bool) uint32 {
+	if v {
+		return 1
+	}
+	return 0
+}
+
+func TestShiftDifferential(t *testing.T) {
+	ops := []byte{ShiftROL, ShiftROR, ShiftRCL, ShiftRCR, ShiftSHL, ShiftSHR, ShiftSAR, 6}
+	for _, width := range []int{Width8, Width16} {
+		hi := 0xFF
+		if width == Width16 {
+			hi = 0xFFFF
+		}
+		stepV := 1
+		if width == Width16 {
+			stepV = 257
+		}
+		for _, op := range ops {
+			for v := 0; v <= hi; v += stepV {
+				for count := byte(1); count <= 20; count++ {
+					for _, cin := range []bool{false, true} {
+						gr, gf, giro := Shift(op, uint16(v), count, width, cin)
+						wr, wf, wiro := refShift(op, uint16(v), count, width, cin)
+						if gr != wr || gf.Carry != wf.Carry || gf.Sign != wf.Sign ||
+							gf.Zero != wf.Zero || gf.Parity != wf.Parity || giro != wiro {
+							t.Fatalf("op=%d w=%d v=%#x n=%d cin=%v: got(%#x,%+v) want(%#x,%+v)",
+								op, width, v, count, cin, gr, gf, wr, wf)
+						}
+						if count == 1 && gf.Overflow != wf.Overflow {
+							t.Fatalf("OF op=%d w=%d v=%#x cin=%v: got %v want %v", op, width, v, cin, gf.Overflow, wf.Overflow)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestIncDecDifferential(t *testing.T) {
 	for _, width := range []int{Width8, Width16} {
 		mask := 1<<uint(width) - 1

@@ -23,6 +23,7 @@ import (
 	"github.com/retronet-labs/retronet-logic/bit"
 	"github.com/retronet-labs/retronet-logic/bus"
 	"github.com/retronet-labs/retronet-logic/gates"
+	"github.com/retronet-labs/retronet-logic/shifter"
 )
 
 // Larghezze dati supportate dall'8086.
@@ -91,6 +92,80 @@ func Decrement(value uint16, width int) (uint16, Flags) {
 	out, f := arith(value, 1, width, bit.One, true)
 	f.Carry = false
 	return out, f
+}
+
+// Operazioni di shift/rotate dell'8086 (campo reg di D0-D3).
+const (
+	ShiftROL = 0
+	ShiftROR = 1
+	ShiftRCL = 2
+	ShiftRCR = 3
+	ShiftSHL = 4 // alias SAL; il codice 6 e' un secondo alias di SHL
+	ShiftSHR = 5
+	ShiftSAR = 7
+)
+
+// ShiftFlags raccoglie i flag prodotti da uno shift/rotate. Quali vengano
+// effettivamente applicati lo decide il chiamante: gli shift toccano CF/OF e
+// SF/ZF/PF, le rotazioni solo CF/OF; OF e' definito solo per count==1.
+type ShiftFlags struct {
+	Carry, Overflow, Sign, Zero, Parity bool
+}
+
+// Shift esegue uno shift/rotate dell'8086 componendo lo shifter a 1 bit di
+// retronet-logic per count passi. Assume count >= 1 (il chiamante gestisce il
+// caso count==0, che sull'8086 non tocca nulla). isRotate distingue le rotazioni
+// (ROL/ROR/RCL/RCR) dagli shift.
+func Shift(op byte, value uint16, count byte, width int, carryIn bool) (result uint16, flags ShiftFlags, isRotate bool) {
+	mask := widthMask(width)
+	b := bus.FromUint(uint64(value)&mask, width)
+	cf := bit.FromBool(carryIn)
+	o := op & 0x07
+	isRotate = o <= ShiftRCR
+
+	for i := byte(0); i < count; i++ {
+		switch o {
+		case ShiftROL:
+			b, cf = shifter.RotateLeft(b)
+		case ShiftROR:
+			b, cf = shifter.RotateRight(b)
+		case ShiftRCL:
+			b, cf = shifter.RotateLeftThroughCarry(b, cf)
+		case ShiftRCR:
+			b, cf = shifter.RotateRightThroughCarry(b, cf)
+		case ShiftSHR:
+			b, cf = shifter.ShiftRight(b)
+		case ShiftSAR:
+			b, cf = shifter.RotateRightThroughCarry(b, b[width-1]) // riempi il MSB col segno
+		default: // ShiftSHL (4) e alias 6
+			b, cf = shifter.ShiftLeft(b)
+		}
+	}
+
+	result = uint16(b.Uint())
+	flags = ShiftFlags{
+		Carry:  cf.IsHigh(),
+		Sign:   msb(uint64(result), width),
+		Zero:   uint64(result)&mask == 0,
+		Parity: parityEvenLow8(uint64(result)),
+	}
+	flags.Overflow = shiftOverflow(o, value, result, flags.Carry, width)
+	return result, flags, isRotate
+}
+
+// shiftOverflow calcola l'OF dell'8086 secondo la regola valida per count==1.
+func shiftOverflow(o byte, value, result uint16, cf bool, width int) bool {
+	resMSB := msb(uint64(result), width)
+	switch o {
+	case ShiftSHL, 6, ShiftROL, ShiftRCL:
+		return resMSB != cf
+	case ShiftSHR:
+		return msb(uint64(value), width) // bit alto dell'operando originale
+	case ShiftSAR:
+		return false // il segno e' preservato
+	default: // ShiftROR, ShiftRCR: XOR dei due bit alti del risultato
+		return resMSB != (result>>uint(width-2)&1 == 1)
+	}
 }
 
 // Mul moltiplica a per b (width bit ciascuno) col metodo shift-and-add sul
