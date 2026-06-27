@@ -320,18 +320,21 @@ func arith(a, b uint16, width int, cin bit.Bit, isSub bool) (uint16, Flags) {
 	}
 
 	out, carryOut := add(av, addend, width, cin)
-	carryMSB := carryInto(av, addend, width-1, cin) // riporto entrante nel bit di segno
-	carry4 := carryInto(av, addend, 4, cin)         // riporto del mezzo-byte (AF)
+	carryMSB := carryInto(av, addend, width-1, cin) // riporto entrante nel bit di segno (per OF)
 
 	carry := carryOut
 	if isSub {
 		carry = !carryOut // sull'8086 il Carry della sottrazione e' il prestito
 	}
 
+	// AF = bit 4 di (a XOR b XOR risultato) con b *originale*: mezzo-riporto per
+	// l'addizione, mezzo-prestito per la sottrazione (semantica 8086).
+	aux := (av^bv^out)>>4&1 == 1
+
 	return uint16(out), Flags{
 		Carry:     carry,
 		Parity:    parityEvenLow8(out),
-		Auxiliary: carry4,
+		Auxiliary: aux,
 		Zero:      out == 0,
 		Sign:      msb(out, width),
 		Overflow:  carryMSB != carryOut,

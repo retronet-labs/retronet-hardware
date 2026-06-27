@@ -74,7 +74,7 @@ func refArith(a, b uint32, width int, cinBool, isSub bool) (uint32, Flags) {
 	xorc := res ^ av ^ addend
 	carryOut := res>>uint(width)&1 == 1
 	carryMSB := xorc>>uint(width-1)&1 == 1
-	carry4 := xorc>>4&1 == 1
+	af := (av^bv^out)>>4&1 == 1 // AF dai valori originali (b non complementato)
 
 	carry := carryOut
 	if isSub {
@@ -83,7 +83,7 @@ func refArith(a, b uint32, width int, cinBool, isSub bool) (uint32, Flags) {
 	return out, Flags{
 		Carry:     carry,
 		Parity:    refParityEven(out),
-		Auxiliary: carry4,
+		Auxiliary: af,
 		Zero:      out == 0,
 		Sign:      out>>uint(width-1)&1 == 1,
 		Overflow:  carryMSB != carryOut,
