@@ -36,16 +36,27 @@ Con go.work attivo, `go list -m all` può lamentarsi della versione: `go build`/
   (di Logic) + PC + memoria, con ISA didattico (vedi docs/cpu-isa.md). Demo in
   `examples/cpu` (somma 1..5 = 15).
 - **`bridge/`**: adattatori che collegano la `alu` di Logic agli emulatori
-  esistenti — `bridge/i8008` e `bridge/i4004` — validati da test di conformità
-  esaustivi contro un riferimento fedele agli emulatori.
+  esistenti — `bridge/i4004`, `bridge/i8008` e `bridge/i8086` — validati da test
+  di conformità esaustivi contro un riferimento fedele agli emulatori.
+  - **`bridge/i8086`** (il più recente): ALU parametrica su width **8/16 bit** per
+    i gruppi ADD/OR/ADC/SBB/AND/SUB/XOR/CMP(+TEST), `Increment`/`Decrement`,
+    `Mul`/`IMul` (shift-and-add), `Div`/`IDiv` (a ripristino) e `Shift`/`Rotate`
+    (loop sullo shifter a 1 bit) — tutto composto dai primitivi a gate, senza
+    nuovo hardware in Logic. Flag completi 8086: CF/PF/AF/ZF/SF/OF.
+    - **AF della sottrazione**: mezzo-prestito = bit 4 di `a ^ b ^ risultato` con
+      la **b originale** (non complementata). Bug storico già corretto (v0.7.1).
+    È consumato da `retronet-8086` (backend ALU `Gate`).
 
 ## Stato
 
 Lo stack è completo end-to-end: dai gate fino a una **mini-CPU funzionante**
-(register file → PC → CPU, tag locale `v0.2.0`). Gli emulatori `go-4004` e
-`retronet-8008` delegano le operazioni ALU ai bridge (`i4004`/`i8008`), con le
-loro suite di test verdi.
+(register file → PC → CPU, tag locale `v0.2.0`). Gli emulatori `go-4004`,
+`retronet-8008` e `retronet-8086` delegano le operazioni ALU ai bridge
+(`i4004`/`i8008`/`i8086`), con le loro suite di test verdi.
 
-Possibili prossimi passi: estendere l'ISA della mini-CPU, oppure delegare anche
-le rotazioni degli emulatori (servirebbe prima uno shifter combinatorio in
-retronet-logic).
+Tag rilevanti per il bridge i8086: `v0.6.0`, `v0.7.0`, **`v0.7.1`** (fix AF della
+sottrazione) — è la versione richiesta da retronet-8086.
+
+Possibili prossimi passi: estendere l'ISA della mini-CPU, oppure (opzione "gate
+completo") barrel shifter / moltiplicatore / divisore dedicati in retronet-logic
+al posto della composizione per ripetizione.
