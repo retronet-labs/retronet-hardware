@@ -29,10 +29,12 @@ retronet-hardware/
 ├── pc/           # Program Counter (registro + incremento + salto)
 ├── memory/       # modello di memoria a byte
 ├── cpu/          # mini-CPU a 8 bit (datapath + control)
-├── bridge/       # adattatori ALU verso gli emulatori 4004/8008/8086
+├── bridge/       # adattatori ALU verso gli emulatori RetroNet
 │   ├── i4004/
 │   ├── i8008/
-│   └── i8086/    # ALU 8/16 bit + OF/AF, mul/div/shift composti dai gate
+│   ├── i8080/
+│   ├── i8086/    # ALU 8/16 bit + OF/AF, mul/div/shift composti dai gate
+│   └── i6502/    # ADC/SBC binari e BCD, compare, BIT, shift/rotate
 ├── docs/         # guide didattiche in italiano
 └── examples/     # programmi eseguibili di dimostrazione
 ```

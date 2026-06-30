@@ -1,4 +1,4 @@
-# Bridge: collegare la ALU a porte agli emulatori 4004/8008
+# Bridge: collegare la ALU a porte agli emulatori RetroNet
 
 Il pacchetto `bridge` contiene gli **adattatori** che collegano la ALU a porte di
 RetroNet Logic ([`alu`](https://github.com/retronet-labs/retronet-logic)) alla
@@ -8,10 +8,9 @@ semantica di una CPU specifica. Ogni adattatore:
 2. sceglie l'operazione e il riporto entrante secondo l'ISA;
 3. rimappa i flag nella convenzione di quella CPU.
 
-L'obiettivo è permettere agli emulatori **esistenti** (`go-4004`,
-`retronet-8008`) di **delegare** le operazioni aritmetico-logiche alla ALU
-costruita dai gate, senza riscrivere la loro logica e — soprattutto — senza
-cambiarne il comportamento osservabile.
+L'obiettivo è permettere agli emulatori RetroNet di **delegare** le operazioni
+aritmetico-logiche alla ALU costruita dai gate, senza riscrivere la loro logica
+e — soprattutto — senza cambiarne il comportamento osservabile.
 
 ## Conformità garantita
 
@@ -22,6 +21,8 @@ su **tutte** le combinazioni di ingresso:
 - `bridge/i8008`: 8 gruppi ALU × 256 × 256 × 2 (carry) ≈ 1 milione di casi;
 - `bridge/i4004`: tutte le coppie di nibble × 2 (carry) per Add/Sub e tutti i
   nibble per Inc/Dec/Complement.
+- `bridge/i6502`: ADC/SBC × 256 × 256 × 2 × modalità binaria/decimale, più
+  test mirati per logica, compare, BIT e shift/rotate.
 
 I riferimenti rispecchiano `retronet-8008/cpu/alu.go` e
 `go-4004/cpu/instructions.go`; se quegli emulatori cambiano, i test vanno
@@ -75,6 +76,24 @@ c.A, c.C = i4004.Add(c.A, c.R[low], c.C)
 // SUB
 c.A, c.C = i4004.Sub(c.A, c.R[low], c.C)
 ```
+
+## i6502
+
+```go
+result, flags := i6502.ADC(a, value, carryIn, decimalMode)
+result, flags := i6502.SBC(a, value, carryIn, decimalMode)
+result, flags := i6502.Compare(reg, value)
+result, flags := i6502.Logic(i6502.OpEOR, a, value)
+```
+
+Il bridge `i6502` segue la convenzione MOS/NMOS 6502:
+
+- `Carry` in sottrazione significa **nessun prestito**;
+- `ADC`/`SBC` in decimal mode restituiscono il risultato BCD corretto;
+- `Zero`, `Negative` e `Overflow` di `ADC`/`SBC` decimali derivano dal risultato
+  binario pre-correzione, coerentemente col comportamento NMOS modellato dagli
+  emulatori RetroNet;
+- `BIT` produce `Z` da `A & value`, `N` dal bit 7 dell'operando e `V` dal bit 6.
 
 ## Stato
 
